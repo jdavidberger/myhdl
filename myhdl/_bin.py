@@ -23,11 +23,17 @@
 from myhdl._compat import long
 
 
+_int2bitstringcache = {}
+
 def _int2bitstring(num):
     if num == 0:
         return '0'
     if abs(num) == 1:
         return '1'
+
+    if num < (2**17) and num in _int2bitstringcache:
+        return _int2bitstringcache[num]
+    
     bits = []
     p, q = divmod(num, 2)
     bits.append(str(q))
@@ -36,8 +42,10 @@ def _int2bitstring(num):
         bits.append(str(q))
     bits.append('1')
     bits.reverse()
-    return ''.join(bits)
-
+    rtn = ''.join(bits)
+    if num < (2**17):
+        _int2bitstringcache[num] = rtn
+    return rtn
 
 def bin(num, width=0):
     """Return a binary string representation.
