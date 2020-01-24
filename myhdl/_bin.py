@@ -31,6 +31,9 @@ def _int2bitstring(num):
     if abs(num) == 1:
         return '1'
 
+    if num > 0:
+        return "{:b}".format(num)
+    
     if num < (2**17) and num in _int2bitstringcache:
         return _int2bitstringcache[num]
     
