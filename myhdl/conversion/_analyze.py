@@ -140,7 +140,7 @@ def _analyzeSigs(hierarchy, hdl='Verilog'):
 def _analyzeGens(top, absnames):
     genlist = []
     for g in top:
-        if isinstance(g, _UserCode):
+        if isinstance(g, _UserCode) or callable(g):
             tree = g
         elif isinstance(g, (_AlwaysComb, _AlwaysSeq, _Always)):
             f = g.func

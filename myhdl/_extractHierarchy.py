@@ -131,7 +131,11 @@ class _UserCodeDepr(_UserCode):
     def _interpolate(self):
         return self.code % self.namespace
 
+class _UserVerilogF(_UserCode):
 
+    def raiseError(self, msg, info):
+        raise ToVerilogError("Error in user defined Verilog code", msg, info)
+    
 class _UserVerilogCode(_UserCode):
 
     def raiseError(self, msg, info):
@@ -156,15 +160,15 @@ class _UserVerilogInstance(_UserVerilogCode):
 
     def __str__(self):
         args = inspect.getargspec(self.func)[0]
-        s = "%s %s(" % (self.funcname, self.code)
-        sep = ''
-        for arg in args:
-            if arg in self.namespace and isinstance(self.namespace[arg], _Signal):
-                signame = self.namespace[arg]._name
-                s += sep
-                sep = ','
-                s += "\n    .%s(%s)" % (arg, signame)
-        s += "\n);\n\n"
+
+        is_signal = lambda arg: arg in self.namespace and isinstance(self.namespace[arg], _Signal)
+        is_param = lambda arg: arg in self.namespace and not isinstance(self.namespace[arg], _Signal) and self.namespace[arg] is not None
+        params = ', '.join([".%s(%s)" % (a,self.namespace[a]) for a in args if is_param(a)])
+        signals = ','.join(["\n\t.%s(%s)" % (a,self.namespace[a]._name) for a in args if is_signal(a)])
+
+        s = "%s #(%s) %s(%s\n);" % (self.funcname, params,
+                                    self.code if isinstance(self.code, str) else self.block.name,
+                                    signals);
         return s
 
 

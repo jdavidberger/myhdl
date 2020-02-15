@@ -218,8 +218,12 @@ class _Block(object):
         self.subs = _flatten(func(*args, **kwargs))
         self._verifySubs()
         self._updateNamespaces()
-        self.verilog_code = self.vhdl_code = None
+        self.verilog_code = self.vhdl_code = self.verilog_code_f = None
         self.sim = None
+        if hasattr(deco, 'verilog_code_f'):
+            self.verilog_code_f = _UserVerilogCode(deco.verilog_code_f, self.symdict, func.__name__,
+                                                 func, srcfile, srcline)
+        
         if hasattr(deco, 'verilog_code'):
             self.verilog_code = _UserVerilogCode(deco.verilog_code, self.symdict, func.__name__,
                                                  func, srcfile, srcline)
@@ -227,7 +231,7 @@ class _Block(object):
             self.vhdl_code = _UserVhdlCode(deco.vhdl_code, self.symdict, func.__name__,
                                            func, srcfile, srcline)
         if hasattr(deco, 'verilog_instance'):
-            self.verilog_code = _UserVerilogInstance(deco.vhdl_instance, self.symdict, func.__name__,
+            self.verilog_code = _UserVerilogInstance(deco.verilog_instance, self.symdict, func.__name__,
                                                      func, srcfile, srcline)
         if hasattr(deco, 'vhdl_instance'):
             self.vhdl_code = _UserVhdlInstance(deco.vhdl_instance, self.symdict, func.__name__,

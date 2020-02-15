@@ -56,13 +56,15 @@ from myhdl._ShadowSignal import _TristateSignal, _TristateDriver
 from myhdl._block import _Block
 from myhdl._getHierarchy import _getHierarchy
 
+import functools
+
 _converting = 0
 _profileFunc = None
 
 
 def _checkArgs(arglist):
     for arg in arglist:
-        if not isinstance(arg, (GeneratorType, _Instantiator, _UserVerilogCode)):
+        if not isinstance(arg, (GeneratorType, _Instantiator, _UserVerilogCode)) and not callable(arg):
             raise ToVerilogError(_error.ArgType, arg)
 
 
@@ -70,7 +72,11 @@ def _flatten(*args):
     arglist = []
     for arg in args:
         if isinstance(arg, _Block):
-            if arg.verilog_code is not None:
+            if arg.verilog_code_f is not None:
+                arglist.append(functools.partial(arg.verilog_code_f.code,arg.verilog_code_f,arg))
+                continue
+            elif arg.verilog_code is not None:
+                arg.verilog_code.block = arg
                 arglist.append(arg.verilog_code)
                 continue
             else:
@@ -501,6 +507,9 @@ def _convertGens(genlist, vfile):
     for tree in genlist:
         if isinstance(tree, _UserVerilogCode):
             blockBuf.write(str(tree))
+            continue
+        elif callable(tree):
+            blockBuf.write(tree())
             continue
         if tree.kind == _kind.ALWAYS:
             Visitor = _ConvertAlwaysVisitor
@@ -1657,7 +1666,7 @@ class _AnnotateTypesVisitor(ast.NodeVisitor, _ConversionMixin):
 
 def _annotateTypes(genlist):
     for tree in genlist:
-        if isinstance(tree, _UserVerilogCode):
+        if isinstance(tree, _UserVerilogCode) or callable(tree):
             continue
         v = _AnnotateTypesVisitor(tree)
         v.visit(tree)
